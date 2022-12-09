@@ -1,5 +1,9 @@
 [
   {
+    "transaction_metadatum_label": 68,
+    "description": "CIP-0068 - Optional Policy Asset Defaults for Token Metadata Standard"
+  },
+  {
     "transaction_metadatum_label": 87,
     "description": "milkomeda.com - The protocol magic for the milkomeda protocol"
   },

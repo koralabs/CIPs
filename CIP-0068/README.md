@@ -51,7 +51,9 @@ This is the registered `asset_name_label` value
 For a correct relationship between the `user token` and the `reference NFT` a few conditions **must** be met.
 - The `user token` and `reference NFT` **must** be under the same policy ID. 
 - For a specific `user token` there **must** exist exactly **one** `reference NFT`
-- The `user token` and associated `reference NFT` **must** follow the standard naming pattern. The asset name of both assets is prefixed with its respective `asset_name_label` followed by a pattern defined by the asset class (e.g. asset_name_label 222)
+- The `user token` and associated `reference NFT` **must** follow the standard naming pattern as follows:
+  - The asset name of both assets is prefixed with its respective `asset_name_label` followed by a pattern defined by the asset class (e.g. asset_name_label 222).
+  - Optionally, the `user token` may exclude the `asset_name_label` if (and only if) the transaction metadata on the latest minting transaction of the "unnamed" token in the same policy contains a policy-wide default `asset_name_label` in the CIP-0010 registered metadata label "68". The reference token cannot exclude the `asset_name_label`.
 
 Some remarks about the above,
 1. The `user token` and `reference NFT` do not need to be minted in the same transaction. The order of minting is also not important.
@@ -124,24 +126,6 @@ Example datum as JSON:
 {"constructor" : 0, "fields": [{"map": [{"k": "6E616D65", "v": "5370616365427564"}, {"k": "696D616765", "v": "697066733A2F2F74657374"}]}, {"int": 1}]}
 ```
 
-### Retrieve metadata as 3rd party
-
-A third party has the following NFT `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(222)TestToken` they want to lookup. The steps are
-
-1. Construct `reference NFT` from `user token`: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(100)TestToken`
-2. Look up `reference NFT` and find the output it's locked in.
-3. Get the datum from the output and lookup metadata by going into the first field of constructor 0.
-4. Convert to JSON and encode all string entries to UTF-8 if possible, otherwise leave them in hex.
-
-### Retrieve metadata from a Plutus validator
-
-We want to bring the metadata of the NFT `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(222)TestToken` in the Plutus validator context. To do this we
-
-1. Construct `reference NFT` from `user token`: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(100)TestToken` (off-chain)
-2. Look up `reference NFT` and find the output it's locked in. (off-chain)
-3. Reference the output in the transaction. (off-chain)
-4. Verify validity of datum of the referenced output by checking if policy ID of `reference NFT` and `user token` and their asset names without the `asset_name_label` prefix match. (on-chain)
-
 ## 333 FT Standard
 
 The second introduced standard is the `333` FT standard with the registered `asset_name_label` prefix value
@@ -196,23 +180,31 @@ Example datum as JSON:
 {"constructor" : 0, "fields": [{"map": [{"k": "6E616D65", "v": "5370616365427564"}, {"k": "6465736372697074696F6E", "v": "54686973206973206D79207465737420746F6B656E"}]}, {"int": 1}]}
 ```
 
-### Retrieve metadata as 3rd party
+## Retrieving metadata as 3rd party
 
-A third party has the following FT `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(333)TestToken` they want to lookup. The steps are
-
-1. Construct `reference NFT` from `user token`: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(100)TestToken`
-2. Look up `reference NFT` and find the output it's locked in.
-3. Get the datum from the output and lookup metadata by going into the first field of constructor 0.
-4. Convert to JSON and encode all string entries to UTF-8 if possible, otherwise leave them in hex.
-
-### Retrieve metadata from a Plutus validator
-
-We want to bring the metadata of the FT `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(333)TestToken` in the Plutus validator context. To do this we 
-
-1. Construct `reference NFT` from `user token`: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(100)TestToken` (off-chain)
-2. Look up `reference NFT` and find the output it's locked in. (off-chain)
-3. Reference the output in the transaction. (off-chain)
-4. Verify validity of datum of the referenced output by checking if policy ID of `reference NFT` and `user token` and their asset names without the `asset_name_label` prefix match. (on-chain)
+1. Consider the asset name:
+    - If the `asset_name_label` is prefixed in the asset name
+        - Example: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(222)TestToken`
+        - Continue to #2
+    - If the `asset_name_label` is not prefixed in the asset name
+        - Example: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.TestToken`
+        - As a one-time, off-chain lookup for the whole policy, find the "unnamed" token in the policy. If it doesn't exist, full stop - there is no reference token. If the `"68"` transaction metadata tag doesn't exist, full stop - there is no reference token. If it does exist, retrieve the `asset_name_label` from the transaction metadata.
+        - The scehma for the `"68"` transaction metadata tag is as follows and is found on the transaction metadata for the latest minting transaction of the unnamed token in the same policy:
+          ```
+          {
+              "68": { "asset_name_label": "222" }
+          }
+          ``` 
+        - Continue to #2
+2. Construct reference NFT from user token:
+    - `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.(100)TestToken`
+3. Look up reference NFT and find the output it's locked in.
+4. To read the metadata off-chain:
+    1. Get the datum from the output and lookup metadata by going into the first field of constructor 0.
+    2. Convert to JSON and encode all string entries to UTF-8 if possible, otherwise leave them in hex.
+5. To use the metadata in a smart contract:
+    1. Reference the output in the transaction. (off-chain)
+    2. Verify validity of datum of the referenced output by checking if policy ID of reference NFT and user token and their asset names without the `asset_name_label` prefix match. (on-chain)
 
 ## Rationale
 
