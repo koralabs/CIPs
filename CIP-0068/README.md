@@ -188,8 +188,7 @@ Example datum as JSON:
         - Continue to #2
     - If the `asset_name_label` is not prefixed in the asset name
         - Example: `d5e6bf0500378d4f0da4e8dde6becec7621cd8cbf5cbb9b87013d4cc.TestToken`
-        - As a one-time, off-chain lookup for the whole policy, find the "unnamed" token in the policy. If it doesn't exist, full stop - there is no reference token. If the `"68"` transaction metadata tag doesn't exist, full stop - there is no reference token. If it does exist, retrieve the `asset_name_label` from the transaction metadata.
-        - The scehma for the `"68"` transaction metadata tag is as follows and is found on the transaction metadata for the latest minting transaction of the unnamed token in the same policy:
+        - As a one-time, off-chain lookup for the whole policy, find the "unnamed" token in the policy. If it doesn't exist, full stop - there is no reference token. If the `"68"` transaction metadata tag doesn't exist, full stop - there is no reference token. If it does exist, retrieve the `asset_name_label` from the transaction metadata. The scehma for the `"68"` transaction metadata tag is as follows and is found on the transaction metadata for the latest minting transaction of the unnamed token in the same policy:
           ```
           {
               "68": { "asset_name_label": "222" }
